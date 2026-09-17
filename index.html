@@ -17,7 +17,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .crumb .seg{font-size:13px;color:var(--gray);cursor:pointer;padding:3px 7px;border-radius:6px;user-select:none}
 .crumb .seg:hover{background:#f3f4f6}
 .crumb .seg.cur{color:var(--blue);font-weight:700;cursor:default}
-.crumb .arrow{color:#9ca3af;font-size:12px;margin:0 1px}
+.arrow{color:#9ca3af;font-size:12px;margin:0 1px}
 .btn{border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer;font-weight:600;background:#f9fafb;color:var(--ink);transition:background .15s;user-select:none;white-space:nowrap}
 .btn:hover{background:#f3f4f6}
 .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
@@ -31,7 +31,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .icon-btn:hover{background:#f3f4f6;color:var(--ink)}
 .toolbar2{background:var(--card);border-bottom:1px solid var(--line);padding:6px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .info{font-size:12px;color:var(--gray);margin-left:auto;white-space:nowrap}
-/* ===== 画布工作区 ===== */
 .viewport{flex:1;overflow:auto;position:relative;padding:24px;background:
   linear-gradient(45deg,#dde1e7 25%,transparent 25%,transparent 75%,#dde1e7 75%) 0 0/24px 24px,
   #e8ebf0;
@@ -41,7 +40,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .page.draw{touch-action:none;cursor:crosshair}
 .page.draw, .page.draw *{touch-action:none}
 .page.panning{cursor:grabbing}
-/* ===== 图层 ===== */
 .layer{position:absolute;user-select:none}
 .layer img{width:100%;height:100%;display:block;pointer-events:none;-webkit-user-drag:none}
 .img-layer{box-shadow:0 2px 10px rgba(0,0,0,.18);cursor:grab;touch-action:none}
@@ -50,7 +48,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .note-layer{border:2px solid var(--blue);background:rgba(37,99,235,.22);color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.15;word-break:break-word;text-shadow:0 1px 3px rgba(0,0,0,.55);cursor:pointer;padding:2px;overflow:hidden;border-radius:4px}
 .note-layer:hover{border-color:var(--red);background:rgba(220,38,38,.28)}
 .draw-rect{position:absolute;border:2px dashed var(--green);background:rgba(22,163,74,.16);pointer-events:none;z-index:50}
-/* 控制点 */
 .handle{position:absolute;display:none;z-index:51}
 .img-layer.selected .handle{display:block}
 .handle-se{width:14px;height:14px;right:-7px;bottom:-7px;background:#fff;border:2px solid var(--sel);border-radius:50%;cursor:nwse-resize}
@@ -64,12 +61,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .layer-close{position:absolute;top:-13px;right:-13px;width:26px;height:26px;border-radius:50%;border:2px solid var(--sel);background:#fff;color:var(--red);font-size:14px;line-height:1;display:none;align-items:center;justify-content:center;cursor:pointer;z-index:52}
 .img-layer.selected .layer-close{display:flex}
 .layer-close:hover{background:var(--red);color:#fff}
-/* ===== 空状态 ===== */
 .empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:5}
 .empty-card{background:rgba(255,255,255,.95);border:1px dashed var(--line);border-radius:14px;padding:34px 30px;text-align:center;max-width:90%}
 .empty-t{font-size:16px;font-weight:700;margin-bottom:10px}
 .empty-d{font-size:13px;color:var(--gray);line-height:1.8}
-/* ===== 弹窗 / 菜单 / 提示 ===== */
 .modal-mask{position:fixed;inset:0;background:rgba(17,24,39,.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
 .modal{background:var(--card);border-radius:14px;padding:20px;width:min(92vw,420px);box-shadow:0 10px 40px rgba(0,0,0,.2)}
 .modal h3{font-size:16px;margin-bottom:14px}
@@ -608,29 +603,47 @@ function updateCrumb(){
   btnBack.classList.toggle('hidden', path.length <= 1);
   document.title = displayName(current, path.length - 1) + ' - 多级画布';
 }
+function saveView(){
+  current._view = { zoom: userZoom, sl: viewport.scrollLeft, st: viewport.scrollTop };
+}
+function restoreView(){
+  var v = current._view;
+  if(v && typeof v.zoom === 'number'){
+    userZoom = v.zoom;
+    applyZoom();
+    viewport.scrollLeft = v.sl;
+    viewport.scrollTop = v.st;
+  } else {
+    userZoom = 1;
+    applyZoom();
+    var b = contentBBox(); centerViewAt(b.x, b.y);
+  }
+}
 function goInto(node){
+  saveView();
   path.push(node); current = node;
   selectedId = null;
   setDrawMode(false);
-  userZoom = 1;
   render();
-  var b = contentBBox(); centerViewAt(b.x, b.y);
+  restoreView();
 }
 function goBack(){
   if(path.length <= 1) return;
+  saveView();
   path.pop(); current = path[path.length - 1];
   selectedId = null;
-  setDrawMode(false); userZoom = 1;
+  setDrawMode(false);
   render();
-  var b = contentBBox(); centerViewAt(b.x, b.y);
+  restoreView();
 }
 function jumpTo(i){
+  saveView();
   path = path.slice(0, i + 1);
   current = path[i];
   selectedId = null;
-  setDrawMode(false); userZoom = 1;
+  setDrawMode(false);
   render();
-  var b = contentBBox(); centerViewAt(b.x, b.y);
+  restoreView();
 }
 function enterChild(note){
   if(!note.child) note.child = createNode('');
@@ -723,7 +736,9 @@ page.addEventListener('pointerdown', function(e){
   page.classList.add('panning');
   page.setPointerCapture(e.pointerId);
 });
-function rectFrom(a, b){ return { x: Math.min(a.x,b.x), y: Math.min(a.y,b.y), w: Math.abs(a.x-b.x), h: Math.abs(a.y-b.y) }; }
+function rectFrom(a, b){
+  return { x: Math.min(a.x,b.x), y: Math.min(a.y,b.y), w: Math.abs(a.x-b.x), h: Math.abs(a.y-b.y) };
+}
 function updateDrawRect(a, b){
   var r = rectFrom(a, b);
   drawEl.style.left = r.x+'px'; drawEl.style.top = r.y+'px';
@@ -879,7 +894,9 @@ var NOTE_COLORS = [
   { name:'黑', bg:'rgba(17,24,39,.78)', fg:'#ffffff' },
   { name:'白', bg:'rgba(255,255,255,.82)', fg:'#1f2937' }
 ];
-function noteColor(n){ return NOTE_COLORS[n.colorIdx || 0]; }
+function noteColor(n){
+  return NOTE_COLORS[n.colorIdx || 0];
+}
 function applyNoteStyle(el, n, refH){
   var c = noteColor(n);
   el.style.background = c.bg;
